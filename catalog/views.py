@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Book, Author, BookInstance, Genre
+from urllib.parse import quote
 
 import http.client
 
@@ -45,7 +46,7 @@ def book_detail(request, pk):
     genre = book.genre
     isbn = book.isbn
     instances = BookInstance.objects.filter(book=book)
-    print(instances)
+    get_book_info(book)
 
     context = {
         'title' : title,
@@ -86,8 +87,7 @@ class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
             .order_by('due_back')
         )
 
-def get_book_info(self):
-
+def get_book_info(book):
 
     conn = http.client.HTTPSConnection("book-finder1.p.rapidapi.com")
 
@@ -95,11 +95,12 @@ def get_book_info(self):
         'X-RapidAPI-Key': "4329ef7408msh53be98e03ed8801p11ea0djsn9d388763b4fa",
         'X-RapidAPI-Host': "book-finder1.p.rapidapi.com"
         }
-
-    conn.request("GET", "/api/search?title={title}&results_per_page=1&page=1", headers=headers)
-
+    book.title = quote(book.title)
+    book_finder_url = f"/api/search?title={book.title}"
+    conn.request("GET", book_finder_url, headers=headers)
     res = conn.getresponse()
     data = res.read()
     book_info = data.decode("utf-8")
     print(book_info)
+    
     return book_info
