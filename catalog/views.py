@@ -3,6 +3,9 @@ from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Book, Author, BookInstance, Genre
 
+import http.client
+
+
 
 def index(request):
     """View function for home page of site."""
@@ -33,12 +36,35 @@ def index(request):
     return render(request, 'index.html', context=context)
 
 
+def book_detail(request, pk):
+    """Get the information for a given book"""
+    book = Book.objects.get(pk=pk)
+    title = book.title
+    author = book.author
+    summary = book.summary
+    genre = book.genre
+    isbn = book.isbn
+    instances = BookInstance.objects.filter(book=book)
+    print(instances)
+
+    context = {
+        'title' : title,
+        'author': author,
+        'summary' : summary,
+        'genre': genre,
+        'isbn': isbn,
+        'bookinstance': instances,
+        'book': book,
+    }
+
+    return render(request, 'catalog/book_detail.html', context=context)
+
 class BookListView(generic.ListView):
     model = Book
     paginate_by = 15
 
-class BookDetailView(generic.DetailView):
-    model = Book
+# class BookDetailView(generic.DetailView):
+#     model = Book
 
 class AuthorListView(generic.ListView):
     model = Author
@@ -59,3 +85,21 @@ class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
             .filter(status__exact='o')
             .order_by('due_back')
         )
+
+def get_book_info(self):
+
+
+    conn = http.client.HTTPSConnection("book-finder1.p.rapidapi.com")
+
+    headers = {
+        'X-RapidAPI-Key': "4329ef7408msh53be98e03ed8801p11ea0djsn9d388763b4fa",
+        'X-RapidAPI-Host': "book-finder1.p.rapidapi.com"
+        }
+
+    conn.request("GET", "/api/search?title={title}&results_per_page=1&page=1", headers=headers)
+
+    res = conn.getresponse()
+    data = res.read()
+    book_info = data.decode("utf-8")
+    print(book_info)
+    return book_info
