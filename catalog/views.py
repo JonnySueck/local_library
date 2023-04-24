@@ -46,7 +46,7 @@ def book_detail(request, pk):
     genre = book.genre
     isbn = book.isbn
     instances = BookInstance.objects.filter(book=book)
-    get_book_info(book)
+    book_finder_info = get_book_info(book)
 
     context = {
         'title' : title,
@@ -56,6 +56,7 @@ def book_detail(request, pk):
         'isbn': isbn,
         'bookinstance': instances,
         'book': book,
+        'book_finder': book_finder_info,
     }
 
     return render(request, 'catalog/book_detail.html', context=context)
@@ -95,12 +96,12 @@ def get_book_info(book):
         'X-RapidAPI-Key': "4329ef7408msh53be98e03ed8801p11ea0djsn9d388763b4fa",
         'X-RapidAPI-Host': "book-finder1.p.rapidapi.com"
         }
-    book.title = quote(book.title)
-    book_finder_url = f"/api/search?title={book.title}"
+    """The quote function is derived from urllib. Replaces special characters with %xx"""
+    book_title = quote(book.title)
+    book_finder_url = f"/api/search?title={book_title}"
     conn.request("GET", book_finder_url, headers=headers)
     res = conn.getresponse()
     data = res.read()
     book_info = data.decode("utf-8")
-    print(book_info)
-    
+
     return book_info
